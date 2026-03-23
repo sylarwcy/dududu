@@ -69,6 +69,7 @@ public slots:
 private:
     bool m_imageProcessingReady; // 图像处理线程是否就绪
     QMutex m_processingMutex;    // 处理状态互斥锁
+    bool m_bIsErrorLogged;
     // unsigned char* m_pConvertedBuffer;  // 转换后的缓冲区
     // int m_nConvertedBufferSize;         // 转换缓冲区大小
     // bool m_bConversionReady;            // 转换是否就绪

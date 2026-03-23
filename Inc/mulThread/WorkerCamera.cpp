@@ -13,6 +13,7 @@ WorkerCamera::WorkerCamera(const QString &ip, QObject *parent)
     cam = new MyCameraGigE(m_cameraIP);
     camIndex = -1;
     m_imageProcessingReady = true; // 初始状态为就绪
+    m_bIsErrorLogged = false;
 }
 
 void WorkerCamera::initParam(const WorkStation_DATA &paramData) {
@@ -164,6 +165,10 @@ void WorkerCamera::GrabFrame() {
         nRet = cam->m_pcMyCamera->GetImageBuffer(&stImageInfo, 1000);
 
         if (nRet == MV_OK) {
+            if (m_bIsErrorLogged) {
+                QLOG_INFO() << QString("相机恢复正常，成功获取到图像缓冲。");
+                m_bIsErrorLogged = false;
+            }
             //用于保存图片
             EnterCriticalSection(&cam->m_hSaveImageMux);
             if (NULL == cam->m_pSaveImageBuf || stImageInfo.stFrameInfo.nFrameLen > cam->m_nSaveImageBufSize) {
@@ -222,8 +227,10 @@ void WorkerCamera::GrabFrame() {
         } else {
             if (MV_TRIGGER_MODE_ON == cam->m_nTriggerMode)
                 Sleep(5);
-
-            QLOG_ERROR() << QString("m_pcMyCamera->GetImageBuffer函数发生错误,等待中...");
+            if (!m_bIsErrorLogged) {
+                QLOG_ERROR() << QString("m_pcMyCamera->GetImageBuffer函数发生错误(相机可能已断连), 等待中...");
+                m_bIsErrorLogged = true; // 标记为已经打印过
+            }
         }
 
         //等待时间
